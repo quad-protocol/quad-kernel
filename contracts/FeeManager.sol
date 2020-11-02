@@ -18,7 +18,7 @@ contract FeeManager is IFeeManager, Governable {
     bytes32 internal constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
 
     constructor(uint256 feeBips, IAccessControl accessControl) public Governable(FEE_MANAGER_ROLE, true, accessControl) {
-        changeFeeBips(feeBips);
+        _feeBips = feeBips;
         subscribe(NO_FEE_ROLE, FEE_MANAGER_ROLE);
         subscribe(NO_FEE_RECIPIENT_ROLE, FEE_MANAGER_ROLE);
         subscribeSingleton(FEE_COLLECTOR_ROLE, FEE_MANAGER_ROLE);
