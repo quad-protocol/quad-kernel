@@ -26,7 +26,7 @@ contract("QuadToken", addresses => {
         await this.quadAdmin.registerSingleton(web3.utils.soliditySha3("FEE_MANAGER_ROLE"), this.feeManager.address, { from: owner });
         await this.quadAdmin.registerSingleton(web3.utils.soliditySha3("TRANSFER_MANAGER_ROLE"), this.transferManager.address, { from: owner });
 
-        this.quadToken = await QuadToken.new("QUAD", "QUAD", "18", 10000e18.toLocaleString("fullwide", { useGrouping: false }), this.quadAdmin.address, { from: owner });
+        this.quadToken = await QuadToken.new("QUAD", "QUAD", 10000e18.toLocaleString("fullwide", { useGrouping: false }), this.quadAdmin.address, { from: owner });
     });
 
     it("should call TransferManager on every transfer", async () => {

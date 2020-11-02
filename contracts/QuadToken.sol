@@ -13,8 +13,8 @@ contract QuadToken is ERC20Burnable, RemoteAccessControl {
     bytes32 internal constant LGE_ROLE = keccak256("LGE_ROLE");
     bytes32 internal constant QUAD_TOKEN_ROLE = keccak256("QUAD_TOKEN_ROLE");
 
-    constructor(string memory name, string memory symbol, uint8 decimals, uint256 totalSupply, 
-                IAccessControl accessControl) public ERC20(name, symbol) RemoteAccessControl(QUAD_TOKEN_ROLE, true,  accessControl) {
+    constructor(string memory name, string memory symbol, uint256 totalSupply, IAccessControl accessControl) 
+                public ERC20(name, symbol) RemoteAccessControl(QUAD_TOKEN_ROLE, true,  accessControl) {
         _mint(_msgSender(), totalSupply);
         subscribeSingleton(FEE_MANAGER_ROLE, QUAD_TOKEN_ROLE);
         subscribeSingleton(TRANSFER_MANAGER_ROLE, QUAD_TOKEN_ROLE);
