@@ -13,12 +13,14 @@ contract("FeeManager", addresses => {
 
     let owner = addresses[0];
     let noFee = addresses[1];
-    let feeCollector = addresses[2];
+    let noFeeRecipient = addresses[2];
+    let feeCollector = addresses[3];
 
     beforeEach(async () => {
         this.quadAdmin = await QuadAdminMock.new({ from: owner });
         
         await this.quadAdmin.grantRole(web3.utils.soliditySha3("NO_FEE_ROLE"), noFee);
+        await this.quadAdmin.grantRole(web3.utils.soliditySha3("NO_FEE_RECIPIENT_ROLE"), noFeeRecipient);
         await this.quadAdmin.registerSingleton(web3.utils.soliditySha3("FEE_COLLECTOR_ROLE"), feeCollector);
         await this.quadAdmin.grantRole(web3.utils.soliditySha3("GOVERNOR_ROLE"), owner);
 
@@ -27,6 +29,13 @@ contract("FeeManager", addresses => {
 
     it("should return 0 fees when the sender is in the NO_FEE role", async () => {
         let result = await this.feeManager.calculateFee(noFee, owner, 10e18.toString());
+
+        expect(result.feeAmount).bignumber.zero;
+        expect(result.feeRecipient).equal("0x0000000000000000000000000000000000000000")
+    });
+
+    it("should return 0 fees when the recipient is in the NO_FEE_RECIPIENT role", async () => {
+        let result = await this.feeManager.calculateFee(owner, noFeeRecipient, 10e18.toString());
 
         expect(result.feeAmount).bignumber.zero;
         expect(result.feeRecipient).equal("0x0000000000000000000000000000000000000000")
