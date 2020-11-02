@@ -35,8 +35,9 @@ contract("InitialQuadLGE", addresses => {
         this.uniFactory = await UniFactory.new(owner);
 
         let lgeRole = web3.utils.soliditySha3("LGE_ROLE");
-        this.lge = await InitialLGE.new(this.quadToken.address, this.quadAdmin.address, this.uniFactory.address, this.weth.address);
+        this.lge = await InitialLGE.new(this.quadAdmin.address, this.uniFactory.address, this.weth.address);
         //await this.quadAdmin.grantRole(lgeRole, this.lge.address, { from: owner });
+        await this.quadAdmin.registerSingleton(web3.utils.soliditySha3("QUAD_TOKEN_ROLE"), this.quadToken.address);
         await this.quadAdmin.setRoleAdmin(web3.utils.soliditySha3("LP_TOKEN_ROLE"), lgeRole);
         await this.quadAdmin.setRoleAdmin(web3.utils.soliditySha3("WRAPPED_LP_ROLE"), lgeRole);
         await this.quadToken.transfer(this.lge.address, 10e18.toString());

@@ -32,7 +32,6 @@ contract QuadLGE is Governable {
 
     uint256 public lgeLength;
 
-    IERC20MintableBurnable public quadToken;
     IUniswapV2Factory public factory;
     IWETH public weth;
 
@@ -46,13 +45,18 @@ contract QuadLGE is Governable {
     bytes32 internal constant LGE_ROLE = keccak256("LGE_ROLE");
     bytes32 internal constant SECONDARY_LGE_ROLE = keccak256("SECONDARY_LGE_ROLE");
     bytes32 internal constant KILLABLE_ROLE = keccak256("KILLABLE_ROLE");
+    bytes32 internal constant QUAD_TOKEN_ROLE = keccak256("QUAD_TOKEN_ROLE");
+    bytes32 internal constant NO_FEE_ROLE = keccak256("NO_FEE_ROLE");
+    bytes32 internal constant NO_FEE_RECIPIENT_ROLE = keccak256("NO_FEE_RECIPIENT_ROLE");
 
-    constructor(IERC20MintableBurnable _quadToken, IAccessControl accessControl, IWETH _weth, IUniswapV2Factory _factory) 
-        public Governable(LGE_ROLE, false, accessControl) {
-        quadToken = _quadToken;
+    constructor(IAccessControl accessControl, IWETH _weth, IUniswapV2Factory _factory) 
+                public Governable(LGE_ROLE, false, accessControl) {
         factory = _factory;
         weth = _weth;
+        requestRole(NO_FEE_ROLE, address(this), false);
+        requestRole(NO_FEE_RECIPIENT_ROLE, address(this), false);
         requestRole(SECONDARY_LGE_ROLE, address(this), true);
+        subscribeSingleton(QUAD_TOKEN_ROLE, LGE_ROLE);
         subscribeSingleton(TRANSFER_MANAGER_ROLE, LGE_ROLE);
     }
 
@@ -69,7 +73,7 @@ contract QuadLGE is Governable {
     function startLGE(address pairingToken, string calldata name, string calldata symbol, uint256 endTimestamp, bool wrappable) external onlyGovernor LGEFinished {
         require(now < endTimestamp, "Endtimestamp must be greater than the current timestamp");
 
-        address pair = factory.createPair(address(quadToken), pairingToken);
+        address pair = factory.createPair(resolveSingleton(QUAD_TOKEN_ROLE), pairingToken);
         address wrap = address(new LPTokenWrapper(name, symbol, pair, wrappable, remoteAccessControl));
 
         requestRole(WRAPPED_LP_ROLE, wrap, false);
@@ -114,19 +118,22 @@ contract QuadLGE is Governable {
 
     function addLiquidity() external {
         require(lgeLength > 0, "No lge");
+
         LGE storage currentLGE = lges[lgeLength - 1];
         require(now >= currentLGE.endTimestamp && currentLGE.active, "Liquidity already added or LGE ongoing");
+
+        address quadToken = resolveSingleton(QUAD_TOKEN_ROLE);
 
         (uint256 wethLiquidity, uint256 tokenLiquidity) = UniswapV2Library.getReserves(address(factory), address(weth), currentLGE.pairingToken);
         uint256 wethPerToken = UniswapV2Library.quote(1e18, tokenLiquidity, wethLiquidity);
 
-        (uint256 wethQuadLiquidity, uint256 quadLiquidity) = UniswapV2Library.getReserves(address(factory), address(weth), address(quadToken));
+        (uint256 wethQuadLiquidity, uint256 quadLiquidity) = UniswapV2Library.getReserves(address(factory), address(weth), quadToken);
         uint256 wethPerQuad = UniswapV2Library.quote(1e18, quadLiquidity, wethQuadLiquidity);
 
         uint256 tokenQuadRate = wethPerToken.mul(MULTIPLIER).div(wethPerQuad);
         currentLGE.quadMinted = currentLGE.tokensRaised.mul(tokenQuadRate).div(MULTIPLIER);
 
-        quadToken.mint(currentLGE.pair, currentLGE.quadMinted);
+        IERC20MintableBurnable(quadToken).mint(currentLGE.pair, currentLGE.quadMinted);
         IERC20(currentLGE.pairingToken).transfer(currentLGE.pair, currentLGE.tokensRaised);
 
         currentLGE.mintedLP = IUniswapV2Pair(currentLGE.pair).mint(address(this));

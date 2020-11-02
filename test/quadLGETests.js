@@ -46,10 +46,11 @@ contract("QuadLGE", addresses => {
         await this.weth.transfer(this.tokenPair.address, 5e18.toString(), { from: owner });
         await this.tokenPair.mint(addresses[9]);
 
-        this.lge = await QuadLGE.new(this.quadToken.address, this.quadAdmin.address, this.weth.address, this.uniFactory.address);
+        this.lge = await QuadLGE.new(this.quadAdmin.address, this.weth.address, this.uniFactory.address);
 
         let lgeRole = web3.utils.soliditySha3("LGE_ROLE");
         //await this.quadAdmin.grantRole(lgeRole, this.lge.address);
+        await this.quadAdmin.registerSingleton(web3.utils.soliditySha3("QUAD_TOKEN_ROLE"), this.quadToken.address);
         await this.quadAdmin.setRoleAdmin(web3.utils.soliditySha3("WRAPPED_LP_ROLE"), lgeRole);
         await this.quadAdmin.setRoleAdmin(web3.utils.soliditySha3("LP_TOKEN_ROLE"), lgeRole);
         await this.quadAdmin.setRoleAdmin(web3.utils.soliditySha3("KILLABLE_ROLE"), lgeRole);

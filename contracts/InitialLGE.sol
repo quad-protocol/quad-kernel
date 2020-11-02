@@ -17,7 +17,6 @@ contract InitialQuadLGE is RemoteAccessControl {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    IERC20 public _quadToken;
     IUniswapV2Factory public _factory;
     IWETH public _weth;
 
@@ -26,6 +25,9 @@ contract InitialQuadLGE is RemoteAccessControl {
     bytes32 internal constant TRANSFER_MANAGER_ROLE = keccak256("TRANSFER_MANAGER_ROLE");
     bytes32 internal constant LGE_ROLE = keccak256("LGE_ROLE");
     bytes32 internal constant KILLABLE_ROLE = keccak256("KILLABLE_ROLE");
+    bytes32 internal constant QUAD_TOKEN_ROLE = keccak256("QUAD_TOKEN_ROLE");
+    bytes32 internal constant NO_FEE_ROLE = keccak256("NO_FEE_ROLE");
+    bytes32 internal constant NO_FEE_RECIPIENT_ROLE = keccak256("NO_FEE_RECIPIENT_ROLE");
 
     EnumerableSet.AddressSet private _pairingTokens;
     EnumerableSet.AddressSet private _wrappedLPTokens;
@@ -41,10 +43,12 @@ contract InitialQuadLGE is RemoteAccessControl {
 
     bool public _liquidityAdded;
 
-    constructor(IERC20 quadToken, IAccessControl accessControl, IUniswapV2Factory factory, IWETH weth) public RemoteAccessControl(LGE_ROLE, false, accessControl) {
-        _quadToken = quadToken;
+    constructor(IAccessControl accessControl, IUniswapV2Factory factory, IWETH weth) public RemoteAccessControl(LGE_ROLE, false, accessControl) {
         _factory = factory;
         _weth = weth;
+        requestRole(NO_FEE_ROLE, address(this), false);
+        requestRole(NO_FEE_RECIPIENT_ROLE, address(this), false);
+        subscribeSingleton(QUAD_TOKEN_ROLE, LGE_ROLE);
         subscribeSingleton(TRANSFER_MANAGER_ROLE, LGE_ROLE);
     }
 
@@ -79,7 +83,7 @@ contract InitialQuadLGE is RemoteAccessControl {
     function addPairingToken(address token, string calldata name, string calldata symbol) external onlyRoot LGENotStarted {
         require(!_pairingTokens.contains(token), "Token already added");
         
-        address pair = _factory.createPair(token, address(_quadToken));
+        address pair = _factory.createPair(token, resolveSingleton(QUAD_TOKEN_ROLE));
         
         address wrap = address(new LPTokenWrapper(name, symbol, pair, true, remoteAccessControl));
     
@@ -131,7 +135,9 @@ contract InitialQuadLGE is RemoteAccessControl {
     function addLiquidity() external LGEFinished {
         require(!_liquidityAdded, "Liquidity already added");
 
-        uint256 quadPerPool = _quadToken.balanceOf(address(this)).div(_pairingTokens.length());
+        address quadToken = resolveSingleton(QUAD_TOKEN_ROLE);
+
+        uint256 quadPerPool = IERC20(quadToken).balanceOf(address(this)).div(_pairingTokens.length());
         uint256 ethBalance = address(this).balance;
         uint256 ethPerPool = ethBalance.div(_pairingTokens.length());
 
@@ -139,7 +145,7 @@ contract InitialQuadLGE is RemoteAccessControl {
 
         for (uint i = 0; i < _pairingTokens.length(); i ++) {
             address token = _pairingTokens.at(i);
-            address pair = _factory.getPair(token, address(_quadToken));
+            address pair = _factory.getPair(token, quadToken);
 
             uint256 amount;
             if (token != address(_weth))
@@ -148,7 +154,7 @@ contract InitialQuadLGE is RemoteAccessControl {
                 amount = ethPerPool;
 
             assert(IERC20(token).transfer(pair, amount));
-            _quadToken.transfer(pair, quadPerPool);
+            IERC20(quadToken).transfer(pair, quadPerPool);
 
             uint256 mintAmount = IUniswapV2Pair(pair).mint(address(this));
             address wrappedLP = _tokenToLP[token];
