@@ -9,6 +9,7 @@ contract("TransferManager", addresses => {
 
     let owner = addresses[0];
     let killer = addresses[1];
+    let lge = addresses[2];
 
     beforeEach(async () => {
         this.quadAdmin = await QuadAdminMock.new({ from: owner });
@@ -17,8 +18,24 @@ contract("TransferManager", addresses => {
         this.lpToken = await ERC20Mock.new(10e18.toString());
         await this.quadAdmin.grantRole(web3.utils.soliditySha3("GOVERNOR_ROLE"), killer);
         await this.quadAdmin.grantRole(web3.utils.soliditySha3("LP_TOKEN_ROLE"), this.lpToken.address);
+        await this.quadAdmin.grantRole(web3.utils.soliditySha3("LGE_ROLE"), lge);
 
         await this.transferManager.syncAll();
+    });
+
+    it("should lock trading for a period of time after lge", async () => {
+        await truffleAssert.passes(
+            this.transferManager.initialLock(5 * 60 * 1000, { from: lge })
+        );
+        await truffleAssert.reverts(
+            this.transferManager.checkTransfer(owner, owner), "Trading is temporarely locked"
+        );
+
+        await increaseEVMTime(5 * 60 * 1000);
+
+        await truffleAssert.passes(
+            this.transferManager.checkTransfer(owner, owner)
+        );
     });
 
     it("should be able to buy the token", async () => {

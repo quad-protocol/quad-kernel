@@ -114,7 +114,7 @@ contract("InitialQuadLGE", addresses => {
             this.lge.addLiquidity()
         );
 
-        assert.isTrue(await this.transferManagerMock.syncCalled());
+        assert.isTrue(await this.transferManagerMock.initialLockCalled());
     });
 
     it("should have the correct amount of tokens in the pairs", async () => {
@@ -171,7 +171,7 @@ contract("InitialQuadLGE", addresses => {
         await increaseEVMTime(60 * 60 * 24 * 7 + 60);
 
         await truffleAssert.passes(this.lge.addLiquidity());
-        assert.isTrue(await this.transferManagerMock.syncCalled.call());
+        assert.isTrue(await this.transferManagerMock.initialLockCalled.call());
 
         await truffleAssert.passes(this.lge.claimTokens({ from: owner }));
         await truffleAssert.passes(this.lge.claimTokens({ from: lpProvider1 }));

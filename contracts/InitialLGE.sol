@@ -159,7 +159,7 @@ contract InitialQuadLGE is RemoteAccessControl {
             _lpTokensMinted[wrappedLP] = mintAmount;
         }
 
-        ITransferManager(resolveSingleton(TRANSFER_MANAGER_ROLE)).syncAll();
+        ITransferManager(resolveSingleton(TRANSFER_MANAGER_ROLE)).initialLock(5 minutes);
         _liquidityAdded = true;
     }
 
