@@ -42,11 +42,19 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
     //
-    // development: {
-    //  host: "127.0.0.1",     // Localhost (default: none)
-    //  port: 9545,            // Standard Ethereum port (default: none)
-    //  network_id: "*",       // Any network (default: none)
-    // },
+    //Use network test if you want to ignore migrations during tests
+    test: {
+        host: "127.0.0.1",
+        port: 9545,
+        network_id: "*"
+    },
+    //Use network development if you want to execute migrations
+    development: {
+        host: "127.0.0.1",     // Localhost (default: none)
+        port: 9545,            // Standard Ethereum port (default: none)
+        network_id: "*",       // Any network (default: none)
+    },
+
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
