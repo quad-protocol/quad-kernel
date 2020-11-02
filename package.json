@@ -6,7 +6,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test"
+    "test": "truffle test --network test",
+    "postinstall": "truffle compile --all"
   },
   "author": "quaddev",
   "license": "ISC",
