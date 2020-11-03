@@ -63,7 +63,7 @@ module.exports = async function (deployer, network, addresses) {
             pairingTokens.push(new PairingToken(token.address, "QUADLP" + i, "QUADLP" + i));
         }
 
-        pairingTokens.push(new PairingToken(weth, "QUADWETH", "QUADWETH"));
+        pairingTokens.push(new PairingToken(wethContract.address, "QUADWETH", "QUADWETH"));
 
         weth = wethContract.address,
         uniswapFactory = uniswapFactoryContract.address;
