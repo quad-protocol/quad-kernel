@@ -39,11 +39,10 @@ let pairingTokens = [
 ];
 
 module.exports = async function (deployer, network, addresses) {
+    await deployer.deploy(Migrations);
     //network test skips migrations
     if (network == "test")
         return;
-
-    await deployer.deploy(Migrations);
     
     const quadInitialSupply = web3.utils.toBN(10000e18.toLocaleString("fullwide", { useGrouping: false }));
 
